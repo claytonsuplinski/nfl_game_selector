@@ -1,0 +1,186 @@
+<html>
+<head>
+
+	<title>Football Game Selector</title>
+	
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	
+	<link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+	<script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+	<link href='http://fonts.googleapis.com/css?family=Oswald' rel='stylesheet' type='text/css'>
+
+	<link rel="stylesheet" href='./css/main.css'>
+
+	<script src="./js/main.js"></script>
+	<script src="./js/standings.js"></script>
+	<script src="./js/schedule.js"></script>
+	<script src="./js/Playoff.js"></script>
+	<script src="./js/PlayoffTeam.js"></script>
+	<script src="./js/playoffs.js"></script>
+
+</head>
+<body>
+
+<nav id="navbar-1" class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+	<div class="navbar-container">
+		<div class="navbar-header">
+			<button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-navbar-collapse-1">
+				<span class="sr-only">Toggle navigation</span>
+				<span class="icon-bar"></span>
+				<span class="icon-bar"></span>
+				<span class="icon-bar"></span>
+			</button>
+			<a class="navbar-brand navbar-logo"><img src="./teamIcons/NFL.png" /></a>
+			<a class="navbar-brand navbar-title hidden-xs">Football Game Selector</a>
+        </div>
+		<div class="collapse navbar-collapse" id="bs-navbar-collapse-1">			
+			<ul class="nav navbar-nav text-center">
+				<li>
+					<a onclick="load_schedule();" data-toggle="modal" data-target="#standings-modal">Schedule</a>
+				</li>
+				<li>
+					<a onclick="load_standings();" data-toggle="modal" data-target="#standings-modal">Standings</a>
+				</li>
+				<li>
+					<a onclick="load_playoffs();" data-toggle="modal" data-target="#standings-modal">Playoffs</a>
+				</li>
+			</ul>
+		</div>
+	</div>
+</nav>
+
+<nav class="navbar navbar-inverse navbar-fixed-bottom navbar-top-2" role="navigation">
+	<div id="week-container"></div>
+</nav>
+
+<div id="standings-modal" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 id="standings-title" class="modal-title">Standings</h4>
+      </div>
+      <div class="modal-body" id="standings-container"></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="container">
+</div>
+
+</body>
+<script>
+var schedule_data = [];
+var teams = [];
+var curr_week = 0;
+
+$.ajaxSetup({async: false});
+
+// Get schedules from https://www.pro-football-reference.com/years/2019/games.htm
+$.get('./assets/schedules/' + ( new Date().getFullYear() ) + '.csv', function (data){
+	var lines = data.split('\n');
+	lines.forEach(function (line){
+		var game = line.split(',');
+		var week_number = parseInt(game[0]);
+		if(!isNaN(week_number)){
+			if(schedule_data.length < week_number) schedule_data.push([]);
+			if(line.length > 8){
+				schedule_data[week_number-1].push({"away_team": game[3], "home_team": game[6], "week": game[0], "day": game[1],
+					"date": game[2], "time": game[8], "home_result": "", "away_result": ""});
+			}
+			else{
+				schedule_data[week_number-1].push({"away_team": game[3], "home_team": game[5], "week": game[0], "day": game[1],
+					"date": game[2], "time": game[6], "home_result": "", "away_result": ""});
+			}
+		}
+	});
+}, "text");
+
+$.getJSON('teams.json', function (data){
+	teams = data;
+	teams.forEach(function(team){
+		team.wins = 0;
+		team.losses = 0;
+	});
+});
+
+function load_week_navbar(){
+	var tmp_html = "<table><tr>";
+	for(var i=0; i<schedule_data.length; i++){
+		tmp_html += '<td onclick="curr_week='+i+';load_week();" '+(curr_week == i ? 'class="active"' : '')+'>'+(i+1)+'</td>';
+	}
+	tmp_html += "</tr></table>";
+	$("#week-container").html(tmp_html);
+}
+
+function load_week(){
+	var game_index = 0;
+	var tmp_html = "<div class='col-xs-12 week-header select-game-shadow'>Week "+(curr_week+1)+"</div>";
+	schedule_data[curr_week].forEach(function (game){
+		var away_team = teams.filter(function (team) { 
+			return team.full_name == game.away_team;
+		})[0];
+		var home_team = teams.filter(function (team) { 
+			return team.full_name == game.home_team;
+		})[0];
+		var home_color = home_team.color;
+		var away_color = away_team.color;
+		var win_color = "";
+		if(game.away_result == "W"){
+			home_color = away_team.color;
+			away_color = away_team.color;
+			win_color = away_team.color;
+		}
+		if(game.home_result == "W"){
+			home_color = home_team.color;
+			away_color = home_team.color;
+			win_color = home_team.color;
+		}
+		tmp_html += '<div class="col-md-6 col-xs-12 select-game">';
+			tmp_html += '<div class="col-xs-12 select-game-shadow">';
+				tmp_html += '<div class="col-md-12">';
+					tmp_html += '<div class="col-md-4 col-xs-12 select-date" style="background-color:'+home_color+';">';
+						tmp_html += game.date;
+					tmp_html += '</div>';
+					tmp_html += '<div class="col-md-4 col-xs-12 select-date select-day" style="background-color:'+win_color+';">';
+						tmp_html += game.day;
+					tmp_html += '</div>';
+					tmp_html += '<div class="col-md-4 col-xs-12 select-date select-time" style="background-color:'+home_color+';">';
+						tmp_html += game.time;
+					tmp_html += '</div>';
+				tmp_html += '</div>';
+				tmp_html += '<div class="col-xs-12">';
+					tmp_html += '<div class="col-xs-4 team-code" style="background-color:'+away_color+';">';
+						tmp_html += away_team.code + " ("+away_team.wins+"-"+away_team.losses+")";
+						tmp_html += "<br>";
+						tmp_html += game.away_result;
+					tmp_html += '</div>';
+					tmp_html += '<div class="col-xs-8 select-team select-away-team" onclick="select_game('+game_index+', 0, '+curr_week+');" style="background-color:'+win_color+';background-image:url(\'./teamIcons/'+away_team.code+'.png\');">';
+					tmp_html += '</div>';
+					tmp_html += '<div class="col-xs-4 team-code" style="background-color:'+home_color+';">';
+						tmp_html += home_team.code + " ("+home_team.wins+"-"+home_team.losses+")";
+						tmp_html += "<br>";
+						tmp_html += game.home_result;
+					tmp_html += '</div>';
+					tmp_html += '<div class="col-xs-8 select-team select-home-team" onclick="select_game('+game_index+', 1, '+curr_week+');" style="background-color:'+home_color+';background-image:url(\'./teamIcons/'+home_team.code+'.png\');">';
+					tmp_html += '</div>';
+				tmp_html += '</div>';
+			tmp_html += '</div>';
+		tmp_html += '</div>';
+		game_index++;
+	});
+	$('.container').html(tmp_html);
+	load_week_navbar();
+}
+load_week(curr_week);
+
+$.ajaxSetup({async: true});
+</script>
+</html>
