@@ -1,11 +1,13 @@
-function load_standings(){
+SEL.standings = {};
+
+SEL.standings.draw = function(){
 	var tmp_html = "";
 	var conferences = ["AFC", "NFC"];
 	var divisions = ["North", "South", "East", "West"];
 	conferences.forEach(function (conference){
 		tmp_html += "<div class='col-xs-12 standings-conference' style='background:"+(conference == "AFC" ? "#DB2128" : "#033A75" )+"'>"+conference+"</div>";
 		divisions.forEach(function (division){
-			var division_teams = teams.filter(function (team) { 
+			var division_teams = SEL.selector.data.teams.filter(function (team) { 
 				return team.conference == conference && team.division == division;
 			});
 			
@@ -42,7 +44,7 @@ function load_standings(){
 			tmp_html += "</div>";
 			tmp_html += "<div class='col-md-2 col-xs-10 division-container'>";
 			division_teams.forEach(function (team){
-				tmp_html += "<div class='col-xs-12 team-record' style='background-color:"+team.color+";background-image:url(\"./teamIcons/"+team.code+".png\");'>";
+				tmp_html += "<div class='col-xs-12 team-record' style='background-color:"+team.color+";background-image:url(\"" + SEL.selector.get_team_icon( team ) + "\");'>";
 				tmp_html += "<span class='standings-code'>" + team.code + "</span>&nbsp;";
 				tmp_html += team.wins + "-" + team.losses;
 				tmp_html += "</div>";
@@ -50,6 +52,6 @@ function load_standings(){
 			tmp_html += "</div>";
 		});
 	});	
-	$("#standings-title").html("Standings");
-	$("#standings-container").html(tmp_html);
+	$("#modal-title").html("Standings");
+	$(".modal-body").html(tmp_html);
 }
