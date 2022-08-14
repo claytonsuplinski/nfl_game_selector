@@ -311,6 +311,14 @@ td.active{
 	font-size:10px;
 }
 
+#results table td.row-value.year-team{
+	cursor:pointer;
+}
+
+#results table td.row-value.year-team:hover{
+	filter:brightness(1.5);
+}
+
 #results table td.total{
 	background:#faff16;
 }

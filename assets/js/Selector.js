@@ -127,7 +127,7 @@ SEL.selector.draw_week_navbar = function(){
 	$("#week-container").html(
 		'<table><tr>' +
 			this.data.weeks.map(function( week, i ){
-				var onclick = 'SEL.selector.set_week_index(' + i + ');' + week.onclick || 'SEL.selector.select_week(' + i + ');';
+				var onclick = 'SEL.selector.set_week_index(' + i + ');' + ( week.onclick || 'SEL.selector.select_week(' + i + ');' );
 				return '<td onclick="' + onclick + '" ' + ( curr_week == i ? 'class="active"' : '' ) + '>' +
 					week.name +
 				'</td>';

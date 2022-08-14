@@ -32,8 +32,8 @@ SEL.results.load = function(){
 		});
 	};
 
-	recursive_loader( 'prediction', years, function(){
-		recursive_loader( 'result', Object.keys( self.data ), function(){
+	recursive_loader( 'result', years, function(){
+		recursive_loader( 'prediction', Object.keys( self.data ), function(){
 			self.compile();
 			self.draw();
 		} );
@@ -56,7 +56,7 @@ SEL.results.compile = function(){
 		var stats = this.data[ year ];
 		stats.prediction.teams.forEach(function( team ){
 			if( !this.teams[ team.full_name ]         ) this.teams[ team.full_name ]         = { code : team.code };
-			if( !this.teams[ team.full_name ][ year ] ) this.teams[ team.full_name ][ year ] = { num_correct : 0, num_total : 0 };
+			if( !this.teams[ team.full_name ][ year ] ) this.teams[ team.full_name ][ year ] = { num_correct : 0, num_total : 0, games : [] };
 		}, this);
 
 		if( !this.totals[ year ] ){
@@ -85,11 +85,17 @@ SEL.results.compile = function(){
 						this.teams[ prediction_loser  ][ year ].num_total++;
 						this.totals[ year ].num_total++;
 
+						var individual_game_result = { correct : 0, week : week_number, away : teams[0], home : teams[1] };
+
 						if( prediction_winner == result_game.winning_team ){
 							this.teams[ prediction_winner ][ year ].num_correct++;
 							this.teams[ prediction_loser  ][ year ].num_correct++;
 							this.totals[ year ].num_correct++;
+							individual_game_result.correct = 1;
 						}
+
+						this.teams[ prediction_winner ][ year ].games.push( individual_game_result );
+						this.teams[ prediction_loser  ][ year ].games.push( individual_game_result );
 					}
 				}, this);
 			}
@@ -120,6 +126,19 @@ SEL.results.compile = function(){
 			}
 		}, this);
 	}, this);
+};
+
+SEL.results.display_year_team_results = function( year, team_name ){
+	var tmp_html = '';
+	var results = this.teams[ team_name ][ year ];
+	results.games.forEach(function( game ){
+		tmp_html += '<div class="col-xs-5 col-lg-5 team-schedule-week" style="background-color:' + ( game.away == team_name ? '#013368' : '#666' ) + ';"><div class="hidden-xs">' + game.away + '</div></div>';
+		tmp_html += '<div class="col-xs-2 col-lg-2 team-schedule-vs"   style="background-color:' + ( game.correct ? '#199b19' : '#bd1616' ) + ';"><span class="hidden-xs">Week </span>'  + game.week + '</div>';
+		tmp_html += '<div class="col-xs-5 col-lg-5 team-schedule-week" style="background-color:' + ( game.home == team_name ? '#013368' : '#333' ) + ';"><div class="hidden-xs">' + game.home + '</div></div>';
+	});
+
+	$( "#modal-title" ).html( team_name + " - " + year + ' Results (' + results.num_correct + '/' + results.num_total + ')' );
+	$( ".modal-body"  ).html( tmp_html );
 };
 
 SEL.results.draw = function(){
@@ -160,7 +179,11 @@ SEL.results.draw = function(){
 							var team_stats = team[ year ];
 							if( !team_stats.num_total ) return '<td class="row-value">???</td>';
 							var accuracy = get_accuracy( team_stats );
-							return '<td class="row-value" style="background:' + get_accuracy_color( accuracy ) + ';">' + accuracy.toFixed(0) + '%</td>';
+							return '<td class="row-value year-team" style="background:' + get_accuracy_color( accuracy ) + ';" ' + 
+										' data-toggle="modal" data-target="#modal" ' +
+										' onclick="SEL.results.display_year_team_results( ' + year + ', \'' + team_name + '\' );">' + 
+								accuracy.toFixed(0) + 
+							'%</td>';
 						}, this).join('') +
 						( totals.num_total ?
 							'<td class="total row-value" style="background:' + get_accuracy_color( get_accuracy(totals) ) + '">' + get_accuracy( totals ).toFixed(0) + '%</td>' :
