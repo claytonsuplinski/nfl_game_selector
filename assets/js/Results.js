@@ -77,7 +77,7 @@ SEL.results.compile = function(){
 					var teams = [ prediction_game.away_team, prediction_game.home_team ];
 					var result_game = result_week.find(function( r ){ return ( teams.includes( r.winning_team ) && teams.includes( r.losing_team ) ); });
 
-					if( [ prediction_game.away_result, prediction_game.home_result ].includes( 'W' ) ){
+					if( result_game && [ prediction_game.away_result, prediction_game.home_result ].includes( 'W' ) ){
 						var prediction_winner = ( prediction_game.away_result == 'W' ? prediction_game.away_team : prediction_game.home_team );
 						var prediction_loser  = ( prediction_game.away_result == 'L' ? prediction_game.away_team : prediction_game.home_team );
 
@@ -159,14 +159,16 @@ SEL.results.draw = function(){
 		return 'rgb(' + [ Math.round( 255 - ( 2 * ( val - 50 ) ) ), 255, 155 ].join(',') + ')';
 	};
 
+	var team_codes = Object.values( this.teams ).map(function( team ){ return team.code; }).filter( (x,i,arr) => ( arr.indexOf(x) == i ) ).sort( (a,b) => ( a > b ? 1 : -1 ) );
+
 	$(".container").html(
 		'<div id="results" class="select-game-shadow">' +
 			'<div class="title">Regular Season Results</div>' +
 			'<table>' +
 				'<tr>' +
 					'<th>Year</th>' +
-					team_names.map(function( team_name ){
-						return '<th>' + this.teams[ team_name ].code + '</th>';
+					team_codes.map(function( code ){
+						return '<th>' + code + '</th>';
 					}, this).join('') +
 					'<th>Total</th>' +
 				'</tr>' +
@@ -174,9 +176,10 @@ SEL.results.draw = function(){
 					var totals = this.totals[ year ];
 					return '<tr>' + 
 						'<td class="row-name">' + year + '</td>' +
-						team_names.map(function( team_name ){
-							var team = this.teams[ team_name ];
-							var team_stats = team[ year ];
+						team_codes.map(function( code ){
+							var team = Object.values( this.teams ).find(function( t ){ return ( t.code == code && t[ year ] ); });
+							var team_name = team.name;
+							var team_stats = team[ year ] || {};
 							if( !team_stats.num_total ) return '<td class="row-value">???</td>';
 							var accuracy = get_accuracy( team_stats );
 							return '<td class="row-value year-team" style="background:' + get_accuracy_color( accuracy ) + ';" ' + 
